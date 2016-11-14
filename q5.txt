@@ -1,0 +1,10 @@
+PREFIX dbc: <http://dbpedia.org/resource/Category:>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX dbo: <http://dbpedia.org/ontology/>
+SELECT ?city ((?pop / COUNT(?hospital)) as ?ratio) WHERE {
+  ?city dct:subject dbc:Cities_in_Alberta .
+  ?city dbo:populationTotal ?pop .
+  ?hospital dbo:region ?city
+}
+GROUP BY ?city ?pop
+ORDER BY DESC(?ratio)
