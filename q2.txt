@@ -11,5 +11,3 @@ WHERE {
   ?airport rdfs:label ?label
   FILTER regex(?label, ".*International.*")
 }
-GROUP BY ?national_team
-ORDER BY DESC(?COUNT)
