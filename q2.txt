@@ -1,22 +1,15 @@
-10690149
-
-PREFIX i: <http://fr.dbpedia.org/page/Liste_des_a%C3%A9roports_internationaux_au_Canada>
-SELECT DISTINCT ?airports WHERE {
-  ?airports  i:dbpedia-owl:wikiPageWikiLink i:dbpedia-fr:Liste_des_aéroports_internationaux_au_Canada .
-
-
-http://fr.dbpedia.org/page/Liste_des_a%C3%A9roports_internationaux_au_Canada
-
-
-PREFIX dbr: <http://dbpedia.org/resource/>
+PREFIX dbp: <http://dbpedia.org/property/>
 PREFIX dbo: <http://dbpedia.org/ontology/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX schema: <http://schema.org/>
-SELECT DISTINCT ?airports WHERE {
-{
-  ?airports dbo:owner dbr:Transport_Canada .
-    ?airports rdf:type schema:Airport }
-  UNION {
-    ?airports dbo:owner	dbr:Government_of_Canada .
-    ?airports rdf:type schema:Airport }
-    }
+PREFIX dbr: <http://dbpedia.org/resource/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?airport ?city
+WHERE {
+  ?airport rdf:type dbo:Airport .
+  ?airport dbp:cityServed ?city .
+  ?city dbo:country dbr:Canada .
+  ?airport rdfs:label ?label
+  FILTER regex(?label, ".*International.*")
+}
+GROUP BY ?national_team
+ORDER BY DESC(?COUNT)
