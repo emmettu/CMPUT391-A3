@@ -1,16 +1,13 @@
-# NOTE!!!: POST REQUEST must be sent to http://fr.dbpedia.org/sparql for this query as it is in french
-
-PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>
-PREFIX dbr: <http://fr.dbpedia.org/resource/>
-PREFIX prop-fr: <http://fr.dbpedia.org/property/>
-
-SELECT ?number ?ville
+PREFIX dbp: <http://dbpedia.org/property/>
+PREFIX dbo: <http://dbpedia.org/ontology/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX dbr: <http://dbpedia.org/resource/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?airport ?city
 WHERE {
-	dbr:Liste_des_aéroports_internationaux_au_Canada dbpedia-owl:wikiPageWikiLink ?number .
-    ?number prop-fr:ville ?ville .
-#  MINUS{
-#    dbr:Liste_des_aéroports_internationaux_au_Canada dbpedia-owl:wikiPageWikiLink ?number .
-#    ?number prop-fr:ville ?ville .
-#    FILTER(?ville = "???"@fr)
-#  }
+  ?airport rdf:type dbo:Airport .
+  ?airport dbp:cityServed ?city .
+  ?city dbo:country dbr:Canada .
+  ?airport rdfs:label ?label
+  FILTER regex(?label, ".*International.*")
 }

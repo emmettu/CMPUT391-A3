@@ -1,0 +1,16 @@
+# NOTE!!!: POST REQUEST must be sent to http://fr.dbpedia.org/sparql for this query as it is in french
+
+PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>
+PREFIX dbr: <http://fr.dbpedia.org/resource/>
+PREFIX prop-fr: <http://fr.dbpedia.org/property/>
+
+SELECT ?number ?ville
+WHERE {
+	dbr:Liste_des_aéroports_internationaux_au_Canada dbpedia-owl:wikiPageWikiLink ?number .
+    ?number prop-fr:ville ?ville .
+#  MINUS{
+#    dbr:Liste_des_aéroports_internationaux_au_Canada dbpedia-owl:wikiPageWikiLink ?number .
+#    ?number prop-fr:ville ?ville .
+#    FILTER(?ville = "???"@fr)
+#  }
+}
