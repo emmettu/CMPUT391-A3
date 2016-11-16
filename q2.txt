@@ -1,22 +1,16 @@
-10690149
+# NOTE!!!: POST REQUEST must be sent to http://fr.dbpedia.org/sparql for this query as it is in french
 
-PREFIX i: <http://fr.dbpedia.org/page/Liste_des_a%C3%A9roports_internationaux_au_Canada>
-SELECT DISTINCT ?airports WHERE {
-  ?airports  i:dbpedia-owl:wikiPageWikiLink i:dbpedia-fr:Liste_des_aéroports_internationaux_au_Canada .
+PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>
+PREFIX dbr: <http://fr.dbpedia.org/resource/>
+PREFIX prop-fr: <http://fr.dbpedia.org/property/>
 
-
-http://fr.dbpedia.org/page/Liste_des_a%C3%A9roports_internationaux_au_Canada
-
-
-PREFIX dbr: <http://dbpedia.org/resource/>
-PREFIX dbo: <http://dbpedia.org/ontology/>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX schema: <http://schema.org/>
-SELECT DISTINCT ?airports WHERE {
-{
-  ?airports dbo:owner dbr:Transport_Canada .
-    ?airports rdf:type schema:Airport }
-  UNION {
-    ?airports dbo:owner	dbr:Government_of_Canada .
-    ?airports rdf:type schema:Airport }
-    }
+SELECT ?number ?ville
+WHERE {
+	dbr:Liste_des_aéroports_internationaux_au_Canada dbpedia-owl:wikiPageWikiLink ?number .
+    ?number prop-fr:ville ?ville .
+#  MINUS{
+#    dbr:Liste_des_aéroports_internationaux_au_Canada dbpedia-owl:wikiPageWikiLink ?number .
+#    ?number prop-fr:ville ?ville .
+#    FILTER(?ville = "???"@fr)
+#  }
+}
