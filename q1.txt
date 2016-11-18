@@ -1,7 +1,8 @@
 PREFIX dbc: <http://dbpedia.org/resource/Category:>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX dbo: <http://dbpedia.org/ontology/>
-SELECT DISTINCT ?stadium WHERE {
+SELECT DISTINCT ?stadium ?team ?capacity WHERE {
   ?stadium dct:subject dbc:Football_venues_in_Italy .
-  ?stadium dbo:tenant ?team
+  ?stadium dbo:tenant ?team .
+  ?stadium dbo:seatingCapacity ?capacity
 } 
