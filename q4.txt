@@ -4,9 +4,8 @@ PREFIX dbp: <http://dbpedia.org/property/>
 SELECT (COUNT(?national_team) AS ?COUNT) ?national_team
 WHERE {
 	?years dct:subject dbc:FIFA_World_Cup_finals .
-#  	?years dct:subject <http://dbpedia.org/resource/Category:FIFA_Women's_World_Cup_Finals> .
   	?years dbp:team ?national_team
 }
 GROUP BY ?national_team
 ORDER BY DESC(?COUNT)
-#LIMIT 4
+LIMIT 4
