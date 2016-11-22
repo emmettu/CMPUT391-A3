@@ -1,0 +1,59 @@
+A.
+Subject(Predicate, Object);
+Prefixes(prefix, URI);
+CREATE TABLE subject(predicate TEXT, object TEXT, PRIMARY KEY (predicate, object));
+CREATE TABLE prefixes(prefix PRIMARY KEY, uri);
+
+B.
+Each unique subject gets it's own table. This table has two columns, the first contains the predicate and the second the object. Each row is a triple from the input graph where the the subjects are the table names and their corresponding predicates and object are the rows.
+The Prefixes are found in a separate table called 'prefixes' which also has two columns. The first is the name of the prefix and the second is the URI of said prefix.
+
+C.
+Input RDF Graph
+@prefix rdf:	<http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dbr:	<http://dbpedia.org/resource/> .
+@prefix yago:	<http://dbpedia.org/class/yago/> .
+dbr:Edmonton	rdf:type	yago:WikicatTownsInAlberta ,
+		yago:Town108665504 ,
+		yago:GeographicalArea108574314 .
+@prefix wikidata:	<http://www.wikidata.org/entity/> .
+dbr:Edmonton	rdf:type	wikidata:Q486972 ,
+		yago:Artifact100021939 ,
+		yago:Municipality108626283 .
+@prefix dbo:	<http://dbpedia.org/ontology/> .
+dbr:Edmonton	rdf:type	dbo:City ,
+		dbo:PopulatedPlace ,
+		wikidata:Q515 ,
+		yago:AdministrativeDistrict108491826 ,
+		yago:Way104564698 ,
+		yago:WikicatRoadsInEdmonton ,
+		yago:PhysicalEntity100001930 ,
+		yago:Object100002684 ,
+		dbo:Settlement .
+
+Output Relational Database
+### First Table
+dbr:Edmonton
+rdf:type    yago:WikicatTownsInAlberta
+rdf:type    yago:Town108665504
+rdf:type    yago:GeographicalArea108574314
+rdf:type    wikidata:Q486972
+rdf:type    yago:Artifact100021939
+rdf:type    yago:Municipality108626283
+rdf:type    dbo:City
+rdf:type    dbo:PopulatedPlace
+rdf:type    wikidata:Q515
+rdf:type    yago:AdministrativeDistrict108491826
+rdf:type    yago:Way104564698
+rdf:type    yago:WikicatRoadsInEdmonton
+rdf:type    yago:PhysicalEntity100001930
+rdf:type    yago:Object100002684
+rdf:type    dbo:Settlement
+
+### Second Table
+Prefixes
+rdf         <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+dbr         <http://dbpedia.org/resource/>
+yago        <http://dbpedia.org/class/yago/>
+wikidata    <http://www.wikidata.org/entity/>
+dbo         <http://dbpedia.org/ontology/>

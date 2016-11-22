@@ -1,0 +1,11 @@
+In general, absolutely we want to create indices. They speed up queries considerably by avoiding full table scans. We would want to index each table corresponding to a subject by the predicates found in that table (done alphabetically). If the table of prefixes got too numerous we also might want to consider indexing it alphabetically by prefix.
+
+It is perhaps also worth mentioning at this point that for the example in Q6 where there are an extremely limited number of entries, using index tables is more trouble than it is worth. Index tables become more and more important/useful the amount of data in question increases. Scanning a table with 20 entries takes no time at all, but repeatedly scanning a table of several million entries to answer incoming queries is quite costly.
+
+Generic SQLite command to create indices:
+CREATE UNIQUE INDEX index_name
+on table_name (column_name);
+
+Our command to create an index on each subject table:
+CREATE UNIQUE INDEX subject_index
+on subject (predicate);
