@@ -1,0 +1,13 @@
+PREFIX dbp: <http://dbpedia.org/property/>
+PREFIX dbo: <http://dbpedia.org/ontology/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX dbr: <http://dbpedia.org/resource/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT DISTINCT ?airport ?city
+WHERE {
+  ?airport rdf:type dbo:Airport .
+  ?airport dbp:cityServed ?city .
+  ?city dbo:country dbr:Canada .
+  ?airport rdfs:label ?label
+  FILTER (?label>?city)
+}
