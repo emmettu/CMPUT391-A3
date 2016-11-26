@@ -1,5 +1,6 @@
 import sys
 import re
+import sqlite3
 
 
 class RdfParser():
@@ -9,7 +10,7 @@ class RdfParser():
         self.prefix_map = {}
         self.raw = self.read_rdf(file_name)
         self.tokens = self.tokenize(self.raw)
-        self.token_number = 0
+        self.token_number = -1
         self.get_triples()
 
     def read_rdf(self, file_name):
@@ -35,15 +36,28 @@ class RdfParser():
         self.prefix_map[prefix_name] = prefix_value
 
     def dbr(self, subject):
-        triple_list = []
         subject = self.sub_prefix(subject)
-        predicate = self.sub_prefix(self.get_next(self.consume_token()))
-        objects = self.get_objects(self.consume_token())
+        token = subject
+        while True:
+            if token == ".":
+                break
+            predicate = self.get_predicate()
+            self.triplets.extend(self.make_triples(subject, predicate))
+            token = self.peek_token()
         self.consume_token()
-        print(objects)
+
+    def get_predicate(self):
+        doubles = []
+        predicate = self.get_next(self.consume_token())
+        predicate = self.sub_prefix(predicate)
+        objects = self.get_objects(self.consume_token())
+        for o in objects:
+            doubles.append((predicate, o))
+        return doubles
 
     def get_objects(self, token):
-        token = self.sub_prefix(self.get_next(token))
+        token = self.sub_prefix(token)
+        token = self.get_next(token)
         objects = [token]
         next_token = token
         while (next_token != ";"):
@@ -51,9 +65,15 @@ class RdfParser():
                 break
             next_token = self.consume_token()
             if (next_token == ","):
-                next_token = self.consume_token()
-                objects.append(self.sub_prefix(self.get_next(next_token)))
+                next_token = self.sub_prefix(self.consume_token())
+                objects.append(self.get_next(next_token))
         return objects
+
+    def make_triples(self, subject, predicate_list):
+        triples = []
+        for p, o in predicate_list:
+            triples.append((subject, p, o))
+        return triples
 
     def sub_prefix(self, name):
         prefix = None
@@ -77,13 +97,15 @@ class RdfParser():
     def string_end(self, string):
         if "@" in string:
             string = string.split("@")[0]
+        if "^^" in string:
+            string = string.split("^^")[0]
         if string[-1] == "\"":
             return True
         return False
 
     def consume_token(self):
-        token = self.tokens[self.token_number]
         self.token_number += 1
+        token = self.tokens[self.token_number]
         return token
 
     def peek_token(self):
@@ -92,4 +114,17 @@ class RdfParser():
 
 if __name__ == "__main__":
     parser = RdfParser(sys.argv[1])
-    #print(parser.prefix_map)
+    #print(parser.triplets)
+    conn = sqlite3.connect(sys.argv[2])
+    cur = conn.cursor()
+    conn.text_factory = str
+    cur.execute(
+        '''CREATE TABLE triples
+          (subject text, predicate text, object text)''')
+
+    cur.executemany(
+        'INSERT into triples \
+        (subject, predicate, object) \
+        values (?, ?, ?)', parser.triplets)
+    conn.commit()
+    conn.close()
