@@ -92,7 +92,7 @@ class SparqlQueryParser():
     def get_prefixes(self,file_lines):
         i = 0
         while file_lines[i][0] == 'PREFIX':
-            self.prefix_map[file_lines[i][1]] = file_lines[i][2]
+            self.prefix_map[file_lines[i][1]] = file_lines[i][2].replace("<", "").replace(">","")
             i+=1
         return i
 
