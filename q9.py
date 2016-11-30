@@ -151,7 +151,6 @@ class SparqlQueryParser():
 
         select = self.make_select(sub, pred, obj)
         where = self.make_where(subs, preds, objs)
-        print(select + " " + where)
         query_result = cur.execute(select + " " + where, all_items)
         self.fill_variables(only_vars, query_result)
 
@@ -215,6 +214,7 @@ class SparqlQueryParser():
                 out.append(variable_list[i])
             print "|".join(out)
         print
+
 
     def skip(self, var, item):
         if not self.filter_struct:
