@@ -18,6 +18,7 @@ class RdfParser():
             return f.read()
 
     def tokenize(self, raw_rdf):
+        raw_rdf = re.sub("\s#.*$", "", raw_rdf)
         raw_rdf = re.sub("\s+", " ", raw_rdf)
         return raw_rdf.split(" ")
 
