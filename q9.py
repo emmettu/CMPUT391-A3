@@ -24,6 +24,7 @@ class SparqlQueryParser():
         self.variable_map = {}
         self.triples = []
         self.columns = ["subject", "predicate", "object"]
+        self.filter_struct = None
 
         lines = query_text.split("\n")
         prefixes, rest = self.divide_at_prefixes(lines)
@@ -62,22 +63,58 @@ class SparqlQueryParser():
         variables = variables.replace("SELECT", "")
         variables = variables.replace("WHERE", "")
         variables = variables.replace("{", "")
+        variables = variables.strip()
 
         if "*" in variables:
             self.print_all = True
             return
 
-        variables = variables.split(",")
+        variables = variables.split(" ")
         self.output_vars = [i.strip() for i in variables]
 
     def parse_filter_or_triple(self, line):
-        if line.startswith("FILTER("):
+        if line.startswith("FILTER") and "(" in line:
             self.parse_filter(line)
         else:
             self.parse_triple(line)
 
     def parse_filter(self, line):
-        pass
+        line = line.replace("FILTER", "").strip()
+        line = line.strip("(").strip(")")
+        if line.startswith("regex"):
+            self.parse_regex(line)
+        else:
+            self.parse_numeric(line)
+
+    def parse_regex(self, line):
+        line = line.replace("regex(", "")
+        var, query = line.split(",")
+        self.filter_struct = (str.__contains__, var.strip(), query.strip().strip("\""))
+        print self.filter_struct
+
+    def parse_numeric(self, line):
+        func_map = {
+            ">": lambda x, y: self.to_num(x) > y,
+            "<": lambda x, y: self.to_num(x) > y,
+            ">=": lambda x, y: self.to_num(x) > y,
+            "<=": lambda x, y: self.to_num(x) > y,
+            "!=": lambda x, y: self.to_num(x) > y,
+            "==": lambda x, y: self.to_num(x) > y
+        }
+        line = line.strip()
+        items = [i.strip() for i in line.split(" ")]
+
+        var = items[0]
+        op = items[1]
+        pred = self.to_num(items[2])
+
+        self.filter_struct = (func_map[op], var, pred)
+
+    def to_num(self, string):
+        try:
+            return int(string)
+        except:
+            return float(string)
 
     def parse_triple(self, line):
         triples = line.split(" ")
@@ -119,7 +156,6 @@ class SparqlQueryParser():
         print(sub, pred, obj)
         print(select)
         print(where)
-        print(all_items)
         query_result = cur.execute(select + " " + where, all_items)
         self.fill_variables(only_vars, query_result)
 
@@ -139,7 +175,7 @@ class SparqlQueryParser():
         subs = self.or_conditions("subject", sub)
         preds = self.or_conditions("predicate", pred)
         objs = self.or_conditions("object", obj)
-        return "WHERE " + " AND ".join(filter(lambda x: x != "()", [subs, preds, objs]))
+        return "WHERE " + "1 = 1 AND " + " AND ".join(filter(lambda x: x != "()", [subs, preds, objs]))
 
     def or_conditions(self, type_str, lst):
         return "(" + " OR ".join([type_str + " = ? " for i in lst if i != ""]) + ")"
@@ -158,20 +194,40 @@ class SparqlQueryParser():
             for index, var in enumerate(var_list):
                 self.variable_map[var].append(row[index])
 
+    def apply_filter(self):
+        func, variable, pred = self.filter_struct
+        var_list = self.variable_map[variable]
+        self.variable_map[variable] = filter(lambda x: func(x.encode("ascii", "ignore"), pred), var_list)
+
     def print_result(self):
         print(self.variable_map)
         output_list = self.variable_map.keys() if self.print_all else self.output_vars
         length = len(self.variable_map[output_list[0]])
+        out = []
         for i in output_list:
-            sys.stdout.write(i + "|")
-        print
+            out.append(i)
+        print "|".join(out)
+
         for i in range(length):
+            out = []
             for x, variable in enumerate(output_list):
                 variable_list = self.variable_map[variable]
-                sys.stdout.write(variable_list[i] + "|")
-            print
+                if len(variable_list) < i + 1:
+                    return
+                if self.skip(variable, variable_list[i]):
+                    break
+                out.append(variable_list[i])
+            print "|".join(out)
         print
 
+    def skip(self, var, item):
+        if not self.filter_struct:
+            return False
+        if var != self.filter_struct[1]:
+            return False
+        func, variable, pred = self.filter_struct
+        print item, pred
+        return not func(item.encode("ascii", "ignore"), pred)
 
 if __name__ == "__main__":
     parser = SparqlQueryParser(sys.argv[2])
