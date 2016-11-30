@@ -31,7 +31,6 @@ class SparqlQueryParser():
 
         self.get_prefixes(prefixes)
         self.parse_rest(rest[:-1])
-        print(self.prefix_map)
 
     def divide_at_prefixes(self, lines):
         prefix_index = 0
@@ -90,7 +89,6 @@ class SparqlQueryParser():
         line = line.replace("regex(", "")
         var, query = line.split(",")
         self.filter_struct = (str.__contains__, var.strip(), query.strip().strip("\""))
-        print self.filter_struct
 
     def parse_numeric(self, line):
         func_map = {
@@ -138,7 +136,6 @@ class SparqlQueryParser():
         self.print_result()
 
     def run_triple(self, triple, cur):
-        print triple
         sub = triple[0]
         pred = triple[1]
         obj = triple[2]
@@ -152,10 +149,6 @@ class SparqlQueryParser():
 
         select = self.make_select(sub, pred, obj)
         where = self.make_where(subs, preds, objs)
-        print("\n")
-        print(sub, pred, obj)
-        print(select)
-        print(where)
         query_result = cur.execute(select + " " + where, all_items)
         self.fill_variables(only_vars, query_result)
 
@@ -200,7 +193,6 @@ class SparqlQueryParser():
         self.variable_map[variable] = filter(lambda x: func(x.encode("ascii", "ignore"), pred), var_list)
 
     def print_result(self):
-        print(self.variable_map)
         output_list = self.variable_map.keys() if self.print_all else self.output_vars
         length = len(self.variable_map[output_list[0]])
         out = []
@@ -226,7 +218,6 @@ class SparqlQueryParser():
         if var != self.filter_struct[1]:
             return False
         func, variable, pred = self.filter_struct
-        print item, pred
         return not func(item.encode("ascii", "ignore"), pred)
 
 if __name__ == "__main__":
