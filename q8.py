@@ -91,7 +91,14 @@ class RdfParser():
 
     def get_next(self, token):
         if token.startswith("\""):
-            return self.rebuild_string(token)
+            string = self.rebuild_string(token)
+            if "@" in string:
+                string = string.split("@")[0]
+            if "^^" in string:
+                string = string.split("^^")[0]
+            string = string.strip("\"")
+            return string
+
         return token
 
     def rebuild_string(self, token):
