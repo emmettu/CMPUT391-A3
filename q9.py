@@ -95,11 +95,11 @@ class SparqlQueryParser():
     def parse_numeric(self, line):
         func_map = {
             ">": lambda x, y: self.to_num(x) > y,
-            "<": lambda x, y: self.to_num(x) > y,
-            ">=": lambda x, y: self.to_num(x) > y,
-            "<=": lambda x, y: self.to_num(x) > y,
-            "!=": lambda x, y: self.to_num(x) > y,
-            "==": lambda x, y: self.to_num(x) > y
+            "<": lambda x, y: self.to_num(x) < y,
+            ">=": lambda x, y: self.to_num(x) >= y,
+            "<=": lambda x, y: self.to_num(x) <= y,
+            "!=": lambda x, y: self.to_num(x) != y,
+            "==": lambda x, y: self.to_num(x) == y
         }
         line = line.strip()
         items = [i.strip() for i in line.split(" ")]
