@@ -27,6 +27,8 @@ class SparqlQueryParser():
         self.filter_struct = None
 
         lines = query_text.split("\n")
+        lines = [i.strip() for i in lines]
+        lines = [i for i in lines if i != ""]
         prefixes, rest = self.divide_at_prefixes(lines)
 
         self.get_prefixes(prefixes)
