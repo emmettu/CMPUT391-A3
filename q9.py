@@ -8,149 +8,71 @@ Its not actually a runnable query.
 '''
 
 import sys
-import re
 import sqlite3
 
 
 class SparqlQueryParser():
 
     def __init__(self, file_name):
-        # Mappings
-        self.prefix_map = {}
+        with open(file_name, "r") as f:
+            raw_query = f.read()
+        self.parse(raw_query)
+
+    def parse(self, query_text):
         self.variable_map = {}
-        # These are the variables to output at the end
-        self.output_variables = []
-        # If False then we print the variables in output_variables, if True then we print *
-        self.outputFLAG = False
-
+        self.triples = []
         self.columns = ["subject", "predicate", "object"]
+        lines = query_text.split("\n")
+        prefixes, rest = self.divide_at_prefixes(lines)
+        self.get_prefixes(prefixes)
+        self.parse_rest(rest[1:-2])
+        print(self.prefix_map)
 
-        ### Open the file ###
-        f = open(file_name, "r")
-        self.lines = f.readlines()
+    def divide_at_prefixes(self, lines):
+        prefix_index = 0
+        for index, line in enumerate(lines):
+            if not line.strip().startswith("PREFIX"):
+                prefix_index = index
+                break
+        return lines[:prefix_index], lines[prefix_index:]
 
-        ### Parse the query ###
-        self.splitlines = self.split_lines(self.lines)
-        reduce_by = self.get_prefixes(self.splitlines)
-        self.splitlines = self.splitlines[reduce_by:]
-        self.determine_output(self.splitlines[0])
-        self.splitlines = self.splitlines[1:]
-        self.triples, filter_query = self.replace_and_add(self.splitlines)
-        if filter_query:
-            self.filter = self.parse_filter(filter_query)
+    def get_prefixes(self, prefixes):
+        self.prefix_map = {}
+        for prefix in prefixes:
+            self.eval_prefix(prefix)
 
-         # I think these are all of the objects that are needed to actually run the query
-         # print self.filter # (filter-by, var1, var2) where 1 and 2 are the order in which they appear in the query
+    def eval_prefix(self, prefix):
+        prefix = prefix.split(" ")
+        prefix = [i.strip() for i in prefix]
+        key = prefix[1][:-1]
+        value = prefix[2]
+        self.prefix_map[key] = value.replace("<", "").replace(">", "")
 
-#        print self.prefix_map
-#        print self.output_variables
-#        print self.outputFLAG
-#        print self.variable_map
-        print self.triples
+    def parse_rest(self, rest):
+        for line in rest:
+            self.parse_filter_or_triple(line.strip())
 
-    def parse_filter(self, filter):
-        # Reconstruct our Filter query
-        filter_string = ''
-        for i in filter:
-            filter_string = filter_string + i
-            # Remove 'FILTER' from front of line
-        filter_string = filter_string[6:]
-
-        # Deal with regex case
-        if 'regex' in filter_string:
-            count = 0
-            for i in filter_string:
-                if i == '(':
-                    filter_string = filter_string[count:]
-                else:
-                    count += 1
-                    filter_string = filter_string.replace("(","").replace(")","")
-                    filter_params = filter_string.split(',')
-                    filter = ['regex', filter_params[0], filter_params[1]]
-
-        # Deal with numeric constraint case
+    def parse_filter_or_triple(self, line):
+        if line.startswith("FILTER("):
+            self.parse_filter(line)
         else:
-            count = 0
-            for i in filter_string:
-                if i == '(':
-                    filter_string = filter_string[count:]
-                else:
-                    count += 1
-                    filter_string = filter_string.replace("(", "").replace(")", "")
-                    # I think these are all of the operations we might need to do...
-            reg = '(\<=|>=|<|>|==|=)'
-            filter_params = re.split(reg, filter_string)
-            filter = [filter_params[1],filter_params[0],filter_params[2]]
-        return filter
+            self.parse_triple(line)
 
-    def split_lines(self, lines):
-        s = []
-        for line in lines:
-            new = line.split()
-            # Only take non-empty lines
-            if new:
-                s.append(new)
-        return s
+    def parse_filter(self, line):
+        pass
 
-    def get_prefixes(self,file_lines):
-        i = 0
-        while file_lines[i][0] == 'PREFIX':
-            self.prefix_map[file_lines[i][1]] = file_lines[i][2].replace("<", "").replace(">","")
-            i+=1
-        return i
+    def parse_triple(self, line):
+        triples = line.split(" ")
+        triples = [i.strip() for i in triples]
 
-    def determine_output(self, line):
-        # Get just the variables or the '*"
-        # Not terribly robust but I am not sure we need to be...
-        line = line[1:]
-        ###
-        for i in line:
-            if i == '*':
-                self.outputFLAG = True
-            elif i[0] == '?':
-                self.output_variables.append(i)
-            else:
-                continue
+        sub, pred, obj = [self.sub_prefix(i) for i in triples[0:3]]
+        self.triples.append([sub, pred, obj])
 
-    def replace_and_add(self, query):
-        triples = []
-        filter_query = []
-        threes, count = 0, 0
-
-        for i in query:
-            # Get the filter portion
-            if i[0] == 'FILTER':
-                filter_query = i
-                # Don't need to keep around any 'WHERE's or trailing parentheses on new lines
-            elif len(i) < 3:
-                continue
-            # Collect all the triples
-            else:
-                triples.append(i)
-                threes += 1
-                # Replace the triple prefixes with urls
-        query = []
-        for i in triples:
-            q = []
-            for j in i:
-                if j[0] == '?':
-                    self.variable_map[j] = []
-                    q.append(j)
-                    count+=1
-                else:
-                    q.append(self.sub_prefix(j))
-                    count+=1
-                    query.append(q[:3])
-
-        return query, filter_query
-
-    def sub_prefix(self, name):
-        prefix = None
-        if (":" in name and name.split(":")[0] + ":" in self.prefix_map):
-            prefix = name.split(":")[0] + ":"
-        if (prefix):
-            name = name.replace(prefix, self.prefix_map[prefix], 1)
-        return name
+    def sub_prefix(self, item):
+        if ":" in item and item.split(":")[0] in self.prefix_map:
+            key, val = item.split(":")
+            return self.prefix_map[key] + val
+        return item
 
     def execute(self, db):
         conn = sqlite3.connect(db)
@@ -178,10 +100,6 @@ class SparqlQueryParser():
         print(select)
         print(where)
         print(all_items)
-
-        print(cur.execute(select + where), all_items)
-
-
 
     def get_vars(self, string):
         if self.is_new_var(string):
