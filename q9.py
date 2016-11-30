@@ -9,6 +9,7 @@ Its not actually a runnable query.
 
 import sys
 import re
+import sqlite3
 
 
 class SparqlQueryParser():
@@ -21,6 +22,8 @@ class SparqlQueryParser():
         self.output_variables = []
         # If False then we print the variables in output_variables, if True then we print *
         self.outputFLAG = False
+
+        self.columns = ["subject", "predicate", "object"]
 
         ### Open the file ###
         f = open(file_name, "r")
@@ -37,12 +40,12 @@ class SparqlQueryParser():
             self.filter = self.parse_filter(filter_query)
 
          # I think these are all of the objects that are needed to actually run the query
-            print self.filter # (filter-by, var1, var2) where 1 and 2 are the order in which they appear in the query
+         # print self.filter # (filter-by, var1, var2) where 1 and 2 are the order in which they appear in the query
 
-        print self.prefix_map
-        print self.output_variables
-        print self.outputFLAG
-        print self.variable_map
+#        print self.prefix_map
+#        print self.output_variables
+#        print self.outputFLAG
+#        print self.variable_map
         print self.triples
 
     def parse_filter(self, filter):
@@ -50,7 +53,7 @@ class SparqlQueryParser():
         filter_string = ''
         for i in filter:
             filter_string = filter_string + i
-        # Remove 'FILTER' from front of line
+            # Remove 'FILTER' from front of line
         filter_string = filter_string[6:]
 
         # Deal with regex case
@@ -61,9 +64,9 @@ class SparqlQueryParser():
                     filter_string = filter_string[count:]
                 else:
                     count += 1
-            filter_string = filter_string.replace("(","").replace(")","")
-            filter_params = filter_string.split(',')
-            filter = ['regex', filter_params[0], filter_params[1]]
+                    filter_string = filter_string.replace("(","").replace(")","")
+                    filter_params = filter_string.split(',')
+                    filter = ['regex', filter_params[0], filter_params[1]]
 
         # Deal with numeric constraint case
         else:
@@ -73,8 +76,8 @@ class SparqlQueryParser():
                     filter_string = filter_string[count:]
                 else:
                     count += 1
-            filter_string = filter_string.replace("(", "").replace(")", "")
-            # I think these are all of the operations we might need to do...
+                    filter_string = filter_string.replace("(", "").replace(")", "")
+                    # I think these are all of the operations we might need to do...
             reg = '(\<=|>=|<|>|==|=)'
             filter_params = re.split(reg, filter_string)
             filter = [filter_params[1],filter_params[0],filter_params[2]]
@@ -118,14 +121,14 @@ class SparqlQueryParser():
             # Get the filter portion
             if i[0] == 'FILTER':
                 filter_query = i
-            # Don't need to keep around any 'WHERE's or trailing parentheses on new lines
+                # Don't need to keep around any 'WHERE's or trailing parentheses on new lines
             elif len(i) < 3:
                 continue
             # Collect all the triples
             else:
                 triples.append(i)
                 threes += 1
-        # Replace the triple prefixes with urls
+                # Replace the triple prefixes with urls
         query = []
         for i in triples:
             q = []
@@ -137,7 +140,7 @@ class SparqlQueryParser():
                 else:
                     q.append(self.sub_prefix(j))
                     count+=1
-            query.append(q[:3])
+                    query.append(q[:3])
 
         return query, filter_query
 
@@ -149,7 +152,66 @@ class SparqlQueryParser():
             name = name.replace(prefix, self.prefix_map[prefix], 1)
         return name
 
+    def execute(self, db):
+        conn = sqlite3.connect(db)
+        cur = conn.cursor()
+        for triple in self.triples:
+            self.run_triple(triple, cur)
+        conn.close()
+
+    def run_triple(self, triple, cur):
+        print triple
+        sub = triple[0]
+        pred = triple[1]
+        obj = triple[2]
+
+        subs = self.get_vars(sub)
+        preds = self.get_vars(pred)
+        objs = self.get_vars(obj)
+
+        all_items = filter(lambda x: x != "", subs + preds + objs)
+
+        select = self.make_select(sub, pred, obj)
+        where = self.make_where(subs, preds, objs)
+        print("\n")
+        print(sub, pred, obj)
+        print(select)
+        print(where)
+        print(all_items)
+
+        print(cur.execute(select + where), all_items)
+
+
+
+    def get_vars(self, string):
+        if self.is_new_var(string):
+            return []
+        elif self.is_var(string):
+            return self.variable_map[string]
+        return [string]
+
+    def make_select(self, sub, pred, obj):
+        columns = [self.columns[i] for i in range(3) if self.is_var([sub, pred, obj][i])]
+
+        return "SELECT " + ", ".join(columns) + " FROM triples"
+
+    def make_where(self, sub, pred, obj):
+        subs = self.or_conditions("subject", sub)
+        preds = self.or_conditions("predicate", pred)
+        objs = self.or_conditions("object", obj)
+        return "WHERE " + " AND ".join(filter(lambda x: x != "()", [subs, preds, objs]))
+
+    def or_conditions(self, type_str, lst):
+        return "(" + " OR ".join([type_str + " = ? " for i in lst if i != ""]) + ")"
+
+    def is_var(self, string):
+        return string.startswith("?")
+
+    def is_new_var(self, string):
+        return self.is_var(string) and string not in self.variable_map
+
 
 if __name__ == "__main__":
-    parser = SparqlQueryParser(sys.argv[1])
+    parser = SparqlQueryParser(sys.argv[2])
+    parser.execute(sys.argv[1])
     #print(parser.prefix_map)
