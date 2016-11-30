@@ -24,6 +24,7 @@ class RdfParser():
     def get_triples(self):
         while self.token_number < len(self.tokens) - 1:
             token = self.consume_token()
+            #print(token)
             if (token == "@prefix"):
                 self.prefix()
             else:
@@ -36,6 +37,8 @@ class RdfParser():
         self.prefix_map[prefix_name] = prefix_value
 
     def dbr(self, subject):
+        if subject == "":
+            return
         subject = self.sub_prefix(subject)
         token = subject
         while True:
@@ -64,6 +67,8 @@ class RdfParser():
             if (self.peek_token() == "."):
                 break
             next_token = self.consume_token()
+            if (next_token == ""):
+                continue
             if (next_token == ","):
                 next_token = self.sub_prefix(self.consume_token())
                 objects.append(self.get_next(next_token))
