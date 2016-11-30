@@ -117,7 +117,7 @@ class SparqlQueryParser():
     def parse_triple(self, line):
         triples = line.split(" ")
         triples = [i.strip() for i in triples]
-
+        triples = [i.strip("\"") for i in triples]
         sub, pred, obj = [self.sub_prefix(i) for i in triples[0:3]]
         self.triples.append([sub, pred, obj])
 
@@ -149,6 +149,7 @@ class SparqlQueryParser():
 
         select = self.make_select(sub, pred, obj)
         where = self.make_where(subs, preds, objs)
+        print(select + " " + where)
         query_result = cur.execute(select + " " + where, all_items)
         self.fill_variables(only_vars, query_result)
 
@@ -168,7 +169,8 @@ class SparqlQueryParser():
         subs = self.or_conditions("subject", sub)
         preds = self.or_conditions("predicate", pred)
         objs = self.or_conditions("object", obj)
-        return "WHERE " + "1 = 1 AND " + " AND ".join(filter(lambda x: x != "()", [subs, preds, objs]))
+        nop_condition = "1 = 1"
+        return "WHERE " + " AND ".join(filter(lambda x: x != "()", [subs, preds, objs, nop_condition]))
 
     def or_conditions(self, type_str, lst):
         return "(" + " OR ".join([type_str + " = ? " for i in lst if i != ""]) + ")"
