@@ -2,10 +2,13 @@ In general, absolutely we want to create indices. They speed up queries consider
 
 It is perhaps also worth mentioning at this point that for the example in Q6 where there are an extremely limited number of entries, using index tables is more trouble than it is worth. Index tables become more and more important/useful the amount of data in question increases. Scanning a table with 20 entries takes no time at all, but repeatedly scanning a table of several million entries to answer incoming queries is quite costly.
 
+Now, all this being said we decided not to use indexes in q8.py, and here is why:
+We have a small number of fields in our table (just three), and since our first column is always the same value we only really have an option of indexing on the second field, the predicate. The ratio of the number of unique values in our second field compared to the total number of values in an RDF graph is not a very small number making the advantage of using an index limited.
+
 Generic SQLite command to create indices:
 CREATE UNIQUE INDEX index_name
 on table_name (column_name);
 
-Our command to create an index on each subject table:
+A possible command to create an index on each subject table (we did not use indexes though):
 CREATE UNIQUE INDEX subject_index
 on subject (predicate);
